@@ -1,10 +1,26 @@
-import 'dart:math';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:mytest/extension_factory.dart';
+import 'package:mytest/page_test.dart';
+import 'package:mytest/page_test2.dart';
+import 'package:mytest/page_test3.dart';
+import 'package:mytest/widget/tag_title_widget.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<MainModel>(
+          create: (_) => MainModel(),
+          builder: (context, child) {
+            return const MyApp();
+          },
+        ),
+      ],
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -13,12 +29,19 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyTest1Page(title: 'test1'),
+    return ScreenUtilInit(
+      designSize: const Size(375, 720),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (BuildContext context, Widget? child) {
+        return MaterialApp(
+          title: 'Flutter Demo',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          home: const MyTest1Page(title: 'test1'),
+        );
+      },
     );
   }
 }
@@ -77,65 +100,278 @@ class MyTest1PageState extends State<MyTest1Page>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Stack(
-      children: [
-        NotificationListener(
-          onNotification: (onNotification) {
-            if (onNotification is ScrollUpdateNotification ||
-                onNotification is ScrollStartNotification) {
-              scrollState = ScrollState.scrolling;
-              canTranslation = false;
-              if (btnIsHide == false) {
-                debugPrint('当前滑动状态 $scrollState');
-                btnIsHide = true;
-                setState(() {
-                  animationController.forward();
-                });
+      body: Stack(
+        children: [
+          NotificationListener(
+            onNotification: (onNotification) {
+              if (onNotification is ScrollUpdateNotification) {
+                scrollState = ScrollState.scrolling;
+                canTranslation = false;
+                if (btnIsHide == false) {
+                  debugPrint('当前滑动状态 $scrollState');
+                  btnIsHide = true;
+                  setState(() {
+                    animationController.forward();
+                  });
+                }
+              } else if (onNotification is ScrollEndNotification) {
+                scrollState = ScrollState.scrollEnd;
+                canTranslation = true;
+                if (btnIsHide == true) {
+                  btnIsHide = false;
+                  debugPrint('当前滑动状态 $scrollState');
+                  Future.delayed(const Duration(seconds: 2))
+                      .then((value) => setState(() {
+                            if (canTranslation) animationController.reverse();
+                          }));
+                }
               }
-            } else if (onNotification is ScrollEndNotification) {
-              scrollState = ScrollState.scrollEnd;
-              canTranslation = true;
-              if (btnIsHide == true) {
-                btnIsHide = false;
-                debugPrint('当前滑动状态 $scrollState');
-                Future.delayed(const Duration(seconds: 2))
-                    .then((value) => setState(() {
-                          if (canTranslation) animationController.reverse();
-                        }));
-              }
-            }
-            return false;
-          },
-          child: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                elevation: 10,
-                leading: Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child:
-                      hideLeading ? const Icon(Icons.arrow_back_ios_new) : null,
+              return false;
+            },
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  elevation: 10,
+                  leading: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: hideLeading
+                        ? const Icon(Icons.arrow_back_ios_new)
+                        : null,
+                  ),
+                  //leading: hideLeading ? const Icon(Icons.arrow_back_ios_new) : null,
+                  expandedHeight: maxExtent,
+                  flexibleSpace: buildFlexibleSpace(),
                 ),
-                //leading: hideLeading ? const Icon(Icons.arrow_back_ios_new) : null,
-                expandedHeight: maxExtent,
-                flexibleSpace: buildFlexibleSpace(),
-              ),
-              SliverFixedExtentList(
+                SliverGrid(
                   delegate: SliverChildBuilderDelegate(
-                      (context, index) => ListTile(
-                            title: Text('child$index'),
-                          ),
-                      childCount: 20),
-                  itemExtent: 100),
-            ],
+                    (context, index) => buildGridItem(),
+                    childCount: 5,
+                  ),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent:
+                        (MediaQuery.of(context).size.width) / 5, //每一个格子占的空间
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 20.w,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Container(
+                    color: Colors.grey,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.only(top: 1, bottom: 1),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        return buildGridItem2();
+                      },
+                      itemCount: 8,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        mainAxisExtent: 66,
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 0.8,
+                        crossAxisSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 20.w,
+                  ),
+                ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    if (index % 5 == 0) {
+                      return buildListInformationItem();
+                    }
+                    return buildListItem(index);
+                  }, childCount: 20),
+                ),
+              ],
+            ),
           ),
-        ),
-        buildFloatBtn1(),
-      ],
-    ));
+          buildFloatBtn1(),
+        ],
+      ).bgColor(Colors.white),
+    );
   }
 
+  Widget buildListInformationItem() {
+    return Padding(
+      padding: EdgeInsets.only(left: 10.w, right: 10.w),
+      child: Column(
+        children: [
+          Text(
+            '这是一条很长的资讯这是一条很长的资讯这是一条很长的资讯这是一条很长的资讯这是一条很长的资讯',
+            style: TextStyle(
+                fontSize: 15.sp,
+                color: Colors.black,
+                fontWeight: FontWeight.w400),
+          ),
+          SizedBox(height: 8.w),
+          Row(
+            children: [
+              Expanded(
+                child: CachedNetworkImage(
+                  imageUrl: MyTest1Page.imageUrl,
+                  height: 88.w,
+                  fit: BoxFit.fill,
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 3.w, right: 3.w),
+                  child: CachedNetworkImage(
+                    imageUrl: MyTest1Page.imageUrl,
+                    height: 88.w,
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: CachedNetworkImage(
+                  imageUrl: MyTest1Page.imageUrl,
+                  height: 88.w,
+                  fit: BoxFit.fill,
+                ),
+              )
+            ],
+          ),
+          SizedBox(height: 10.w),
+        ],
+      ),
+    );
+  }
+
+  Widget buildListItem(int index) {
+    return Padding(
+      padding: EdgeInsets.only(left: 10.w, right: 10.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TagTitleWidget(
+            titleStyle: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.black,
+                fontWeight: FontWeight.w700,
+                height: 1.2),
+            title: '我就是标题',
+            tagColor: Colors.red,
+            tags: const ['置顶'],
+          ),
+          SizedBox(height: 8.w),
+          Row(
+            children: [
+              Text(
+                '学历：不限',
+                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+              ),
+              SizedBox(width: 10.w),
+              Text(
+                '经验：不限',
+                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+              ),
+              const Expanded(child: SizedBox()),
+              Text(
+                '面议',
+                style: TextStyle(fontSize: 14.sp, color: Colors.red),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.w),
+          Text(
+            '公司名字',
+            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+          ),
+          SizedBox(height: 8.w),
+          TagTitleWidget(
+            titleStyle: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.black,
+                fontWeight: FontWeight.w700,
+                height: 1.2),
+            title: '',
+            tagColor: Colors.blue,
+            tags: const ['牛逼', '厉害'],
+          ),
+          SizedBox(height: 10.w),
+          if (index < 19)
+            Divider(
+              height: 0.8.w,
+              color: Colors.grey,
+            ),
+          SizedBox(height: 10.w),
+        ],
+      ),
+    );
+  }
+
+  Widget buildGridItem2() {
+    return Container(
+      height: 60,
+      color: Colors.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Text(
+                'text1',
+                style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w200),
+              ),
+              Text(
+                'text2',
+                style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w200),
+              ),
+              Text(
+                'text3',
+                style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w200),
+              )
+            ],
+          ),
+          const Icon(
+            Icons.ac_unit,
+            size: 40,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildGridItem() {
+    Widget item = Container(
+      color: Colors.white,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(
+            Icons.ac_unit,
+            size: 40,
+          ),
+          Text('data')
+        ],
+      ),
+    );
+    return item;
+  }
+
+  ///可展开的控件区域组件
   Widget buildFlexibleSpace() {
     return LayoutBuilder(
       builder: (context, boxConstraints) {
@@ -178,13 +414,25 @@ class MyTest1PageState extends State<MyTest1Page>
       bottom: 60,
       child: Transform(
         transform: Matrix4.translationValues(animation.value, 0, 0),
-        child: const ClipOval(
-          child: Icon(
-            Icons.add_circle,
-            size: 50,
+        child: ClipOval(
+          child: GestureDetector(
+            child: const Icon(
+              Icons.add_circle,
+              size: 50,
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) {
+                  return const PageTest3();
+                },
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+class MainModel extends ChangeNotifier {}
