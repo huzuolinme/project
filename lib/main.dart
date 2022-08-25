@@ -1,9 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mytest/extension_factory.dart';
-import 'package:mytest/page_test.dart';
-import 'package:mytest/page_test2.dart';
-import 'package:mytest/page_test3.dart';
+import 'package:mytest/pages/page_test.dart';
+import 'package:mytest/pages/page_test2.dart';
+import 'package:mytest/pages/page_test3.dart';
+import 'package:mytest/pages/page_test5.dart';
 import 'package:mytest/widget/tag_title_widget.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (BuildContext context, Widget? child) {
         return MaterialApp(
+          debugShowCheckedModeBanner: false,
           title: 'Flutter Demo',
           theme: ThemeData(
             primarySwatch: Colors.blue,
@@ -132,14 +134,20 @@ class MyTest1PageState extends State<MyTest1Page>
               controller: _scrollController,
               slivers: [
                 SliverAppBar(
+                  actions: [
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 11.w, right: 10.w),
+                      child: const Icon(Icons.access_time_filled),
+                    )
+                  ],
+                  actionsIconTheme: const IconThemeData(color: Colors.black),
+                  titleSpacing: 0,
                   pinned: true,
                   elevation: 10,
-                  leading: Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: hideLeading
-                        ? const Icon(Icons.arrow_back_ios_new)
-                        : null,
-                  ),
+                  // leading: Padding(
+                  //   padding: EdgeInsets.only(bottom: 11.w),
+                  //   child: const Icon(Icons.arrow_back_ios_new),
+                  // ),
                   //leading: hideLeading ? const Icon(Icons.arrow_back_ios_new) : null,
                   expandedHeight: maxExtent,
                   flexibleSpace: buildFlexibleSpace(),
@@ -424,7 +432,7 @@ class MyTest1PageState extends State<MyTest1Page>
               context,
               MaterialPageRoute(
                 builder: (context) {
-                  return const PageTest3();
+                  return const PageTest5();
                 },
               ),
             ),

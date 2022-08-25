@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 class StreamControls {
   final Map<String, List<StreamController<dynamic>>> streamMap = {};
@@ -21,9 +22,13 @@ class StreamControls {
 
   StreamController<dynamic> register(String tag) {
     List<StreamController>? list = streamMap[tag];
-    list ??= [];
     StreamController<dynamic> streamController = StreamController();
-    list.add(streamController);
+    if (list == null) {
+      list = [streamController];
+      streamMap[tag] = list;
+    } else {
+      list.add(streamController);
+    }
     return streamController;
   }
 
